@@ -62,7 +62,7 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 .g-row.half{background:#FCFCFD}
 .tc{padding:7px 4px 0;text-align:right;font-size:11px;color:var(--muted2);border-right:1px solid var(--border);font-weight:500;line-height:1}
 .g-row.half .tc{color:#E5E7EB;font-size:10px}
-.dc{border-right:1px solid var(--border);min-height:36px;padding:2px 3px;cursor:pointer;transition:background .1s;position:relative}
+.dc{border-right:1px solid var(--border);height:36px;padding:0;cursor:pointer;transition:background .1s;position:relative;overflow:visible}
 .dc:last-child{border-right:none}
 .dc:hover{background:#F9FAFB}
 .dc.today-c{background:#FAFCFF}
@@ -70,7 +70,7 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 .dc:hover .add-hint{opacity:1}
 
 /* ── EVENT CHIP ── */
-.ev{border-radius:4px;padding:2px 5px;font-size:11px;font-weight:500;line-height:1.35;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
+.ev{border-radius:4px;padding:4px 6px;font-size:11px;font-weight:500;line-height:1.4;cursor:pointer;display:flex;align-items:flex-start;gap:4px;position:absolute;left:2px;right:2px;top:2px;z-index:10;overflow:hidden;box-sizing:border-box}
 .ev-who{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;flex-shrink:0;opacity:.85}
 .ev-fix-stripe{
   background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0,rgba(255,255,255,.18) 2px,transparent 2px,transparent 6px);
@@ -383,6 +383,11 @@ function renderGrid(){
   }
   html+='</div>';
 
+  // ROW_H: each 30-min slot = 36px
+  const ROW_H=36;
+  // Pre-index events by (dayIndex|dateStr, startTime) for quick lookup
+  // We'll render events as absolutely positioned overlays on start slot cells
+
   TIMES.forEach(time=>{
     const isH=time.endsWith(':30');
     html+=`<div class="g-row${isH?' half':''}"><div class="tc">${time}</div>`;
@@ -390,30 +395,24 @@ function renderGrid(){
       const d=addDays(weekStart,i);
       const ds=fmt(d);
       const isT=ds===todayStr;
-      const slotEvs=getSlot(ds,time,i).filter(ev=>shouldShow(ev));
-      let maxH=36;
-      slotEvs.forEach(ev=>{
-        const durMins=timeDiff(ev.startTime,ev.endTime);
-        const evH2=Math.max(28,Math.round((durMins/30)*36)-4);
-        if(evH2>maxH)maxH=evH2;
-      });
-      html+=`<div class="dc${isT?' today-c':''}" style="min-height:${maxH+6}px" onclick="openAdd('${ds}','${time}',${i})">`;
-      slotEvs.forEach(ev=>{
+      html+=`<div class="dc${isT?' today-c':''}" onclick="openAdd('${ds}','${time}',${i})">`;
+      // Render events that START at this time slot
+      getSlot(ds,time,i).filter(ev=>shouldShow(ev)).forEach(ev=>{
         const col=userColors[ev.user];
         const isFixed=ev.type==='fixed';
         const whoLabel=ev.user==='yujin'?'유진':'유한';
-        const bgAlpha=isFixed?'0.18':'0.10';
-        const stripePart=isFixed?`background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0,rgba(255,255,255,.12) 2px,transparent 2px,transparent 6px);`:'';
+        const bgAlpha=isFixed?'0.15':'0.09';
+        const stripePart=isFixed?'background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.13) 0,rgba(255,255,255,.13) 2px,transparent 2px,transparent 6px);':'';
         const durMins=timeDiff(ev.startTime,ev.endTime);
-        const evH=Math.max(28,Math.round((durMins/30)*36)-4);
-        html+=`<div class="ev" style="background:rgba(${hex2rgb(col)},${bgAlpha});border-left:2.5px solid ${col};color:${col};min-height:${evH}px;white-space:normal;align-items:flex-start;padding:4px 5px;${stripePart}" onclick="openDetail(event,'${ev.id}')">
-          <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'};margin-top:1px">${whoLabel}</span>
-          <span style="line-height:1.4">${ev.title}${durMins>=60?`<br><span style="font-size:10px;opacity:.7">${ev.startTime}–${ev.endTime}</span>`:''}</span>
+        // height = (durMins/30) slots * ROW_H px - small gap
+        const evH=Math.max(ROW_H-4, Math.round((durMins/30)*ROW_H)-4);
+        const showTime=durMins>=60;
+        html+=`<div class="ev" style="height:${evH}px;background:rgba(${hex2rgb(col)},${bgAlpha});border-left:3px solid ${col};color:${col};${stripePart}" onclick="openDetail(event,'${ev.id}')">
+          <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'};flex-shrink:0">${whoLabel}</span>
+          <span style="overflow:hidden;min-width:0">${ev.title}${showTime?`<br><span style="font-size:9px;opacity:.65">${ev.startTime}–${ev.endTime}</span>`:''}</span>
         </div>`;
       });
-      // stretch the cell to fit the tallest event
-
-      if(currentUser!=='mom')html+='<div class="add-hint">+ 추가</div>';
+      if(currentUser!=='mom')html+='<div class="add-hint" style="position:absolute;bottom:2px;left:3px">+ 추가</div>';
       html+='</div>';
     }
     html+='</div>';
