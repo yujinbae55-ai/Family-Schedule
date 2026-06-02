@@ -24,7 +24,7 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 .week-nav button{width:28px;height:28px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);cursor:pointer;font-size:15px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:background .1s}
 .week-nav button:hover{background:var(--bg)}
 .week-label{font-size:13px;font-weight:500;white-space:nowrap;min-width:118px;text-align:center}
-.btn-today{padding:0 10px;height:28px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer}
+.btn-today{padding:0 10px;height:28px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0}
 .btn-today:hover{background:var(--bg)}
 
 /* ── USER TABS ── */
@@ -62,7 +62,7 @@ body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);
 .g-row.half{background:#FCFCFD}
 .tc{padding:7px 4px 0;text-align:right;font-size:11px;color:var(--muted2);border-right:1px solid var(--border);font-weight:500;line-height:1}
 .g-row.half .tc{color:#E5E7EB;font-size:10px}
-.dc{border-right:1px solid var(--border);min-height:32px;padding:2px 3px;cursor:pointer;transition:background .1s;position:relative}
+.dc{border-right:1px solid var(--border);min-height:36px;padding:2px 3px;cursor:pointer;transition:background .1s;position:relative}
 .dc:last-child{border-right:none}
 .dc:hover{background:#F9FAFB}
 .dc.today-c{background:#FAFCFF}
@@ -390,21 +390,29 @@ function renderGrid(){
       const d=addDays(weekStart,i);
       const ds=fmt(d);
       const isT=ds===todayStr;
-      html+=`<div class="dc${isT?' today-c':''}" onclick="openAdd('${ds}','${time}',${i})">`;
-      getSlot(ds,time,i).forEach(ev=>{
-        if(!shouldShow(ev))return;
+      const slotEvs=getSlot(ds,time,i).filter(ev=>shouldShow(ev));
+      let maxH=36;
+      slotEvs.forEach(ev=>{
+        const durMins=timeDiff(ev.startTime,ev.endTime);
+        const evH2=Math.max(28,Math.round((durMins/30)*36)-4);
+        if(evH2>maxH)maxH=evH2;
+      });
+      html+=`<div class="dc${isT?' today-c':''}" style="min-height:${maxH+6}px" onclick="openAdd('${ds}','${time}',${i})">`;
+      slotEvs.forEach(ev=>{
         const col=userColors[ev.user];
         const isFixed=ev.type==='fixed';
         const whoLabel=ev.user==='yujin'?'유진':'유한';
-        const textCol=isDark(col)?'rgba(255,255,255,.95)':'rgba(0,0,0,.8)';
-        const whoBg=isDark(col)?'rgba(255,255,255,.2)':'rgba(0,0,0,.12)';
         const bgAlpha=isFixed?'0.18':'0.10';
         const stripePart=isFixed?`background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0,rgba(255,255,255,.12) 2px,transparent 2px,transparent 6px);`:'';
-        html+=`<div class="ev" style="background:rgba(${hex2rgb(col)},${bgAlpha});border-left:2.5px solid ${col};color:${col};${stripePart}" onclick="openDetail(event,'${ev.id}')">
-          <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'}">${whoLabel}</span>
-          ${ev.title}
+        const durMins=timeDiff(ev.startTime,ev.endTime);
+        const evH=Math.max(28,Math.round((durMins/30)*36)-4);
+        html+=`<div class="ev" style="background:rgba(${hex2rgb(col)},${bgAlpha});border-left:2.5px solid ${col};color:${col};min-height:${evH}px;white-space:normal;align-items:flex-start;padding:4px 5px;${stripePart}" onclick="openDetail(event,'${ev.id}')">
+          <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'};margin-top:1px">${whoLabel}</span>
+          <span style="line-height:1.4">${ev.title}${durMins>=60?`<br><span style="font-size:10px;opacity:.7">${ev.startTime}–${ev.endTime}</span>`:''}</span>
         </div>`;
       });
+      // stretch the cell to fit the tallest event
+
       if(currentUser!=='mom')html+='<div class="add-hint">+ 추가</div>';
       html+='</div>';
     }
@@ -414,6 +422,13 @@ function renderGrid(){
   updateWeekLabel();
 }
 
+function timeDiff(s,e){
+  if(!s||!e)return 60;
+  const[sh,sm]=s.split(':').map(Number);
+  const[eh,em]=e.split(':').map(Number);
+  const diff=(eh*60+em)-(sh*60+sm);
+  return diff>0?diff:60;
+}
 function getSlot(ds,time,di){
   return events.filter(ev=>ev.startTime===time&&(ev.repeat==='weekly'?ev.day===di:ev.date===ds));
 }
