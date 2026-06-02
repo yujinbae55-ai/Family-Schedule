@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가족 스케줄</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F8FA;--surface:#FFFFFF;--border:#EAECF0;--border2:#D1D5DB;
+  --text:#111827;--muted:#6B7280;--muted2:#9CA3AF;
+  --radius:10px;--radius-sm:6px;
+  --u-yujin:#3B82F6;--u-yuhan:#10B981;
+}
+body{font-family:'Pretendard',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+/* ── HEADER ── */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100;height:54px;display:flex;align-items:center}
+.header-inner{max-width:1120px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.logo-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;margin-bottom:1px}
+.header-center{display:flex;align-items:center;gap:6px}
+.week-nav button{width:28px;height:28px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);cursor:pointer;font-size:15px;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:background .1s}
+.week-nav button:hover{background:var(--bg)}
+.week-label{font-size:13px;font-weight:500;white-space:nowrap;min-width:118px;text-align:center}
+.btn-today{padding:0 10px;height:28px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer}
+.btn-today:hover{background:var(--bg)}
+
+/* ── USER TABS ── */
+.user-tabs{display:flex;gap:4px;background:#F3F4F6;padding:3px;border-radius:8px}
+.user-tab{padding:5px 14px;border:none;background:transparent;border-radius:6px;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;display:flex;align-items:center;gap:6px}
+.user-tab .tab-dot{width:7px;height:7px;border-radius:50%;display:inline-block;transition:background .2s}
+.user-tab.active{color:#fff}
+
+/* ── FILTERS ── */
+.toolbar{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-label{font-size:11px;color:var(--muted2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.fbtn{padding:4px 11px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);color:var(--muted);font-family:'Pretendard',sans-serif;transition:all .15s}
+.fbtn.on{border-color:transparent;color:#fff}
+.spacer{flex:1}
+.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.leg-bar{width:10px;height:10px;border-radius:2px}
+
+/* ── GRID WRAP ── */
+.grid-wrap{max-width:1120px;margin:0 auto;padding:0 20px 40px;overflow-x:auto}
+.grid{min-width:660px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+
+/* ── GRID HEADER ── */
+.g-head{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--border)}
+.gh{padding:9px 4px;text-align:center;font-size:11px;font-weight:600;color:var(--muted);border-right:1px solid var(--border);letter-spacing:.3px}
+.gh:last-child{border-right:none}
+.gh .dn{font-size:14px;font-weight:600;color:var(--text);display:block;margin-bottom:1px}
+.gh.sat .dn,.gh.sat{color:#2563EB}
+.gh.sun .dn,.gh.sun{color:#DC2626}
+.gh.today-h{background:#F0F9FF}
+
+/* ── GRID ROW ── */
+.g-row{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--border)}
+.g-row:last-child{border-bottom:none}
+.g-row.half{background:#FCFCFD}
+.tc{padding:7px 4px 0;text-align:right;font-size:11px;color:var(--muted2);border-right:1px solid var(--border);font-weight:500;line-height:1}
+.g-row.half .tc{color:#E5E7EB;font-size:10px}
+.dc{border-right:1px solid var(--border);min-height:32px;padding:2px 3px;cursor:pointer;transition:background .1s;position:relative}
+.dc:last-child{border-right:none}
+.dc:hover{background:#F9FAFB}
+.dc.today-c{background:#FAFCFF}
+.add-hint{font-size:10px;color:var(--muted2);opacity:0;transition:opacity .1s;padding:1px 2px}
+.dc:hover .add-hint{opacity:1}
+
+/* ── EVENT CHIP ── */
+.ev{border-radius:4px;padding:2px 5px;font-size:11px;font-weight:500;line-height:1.35;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:3px}
+.ev-who{font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;flex-shrink:0;opacity:.85}
+.ev-fix-stripe{
+  background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0,rgba(255,255,255,.18) 2px,transparent 2px,transparent 6px);
+}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .18s}
+.overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:14px;padding:22px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto;transform:translateY(6px);transition:transform .18s}
+.overlay.show .modal{transform:translateY(0)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px}
+.fg{margin-bottom:13px}
+.fl{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:4px;display:block;letter-spacing:.2px}
+.fi{width:100%;padding:8px 11px;border:1px solid var(--border2);border-radius:6px;font-family:'Pretendard',sans-serif;font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+.fi:focus{border-color:currentColor}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type-row{display:flex;gap:7px}
+.tbtn{flex:1;padding:7px 6px;border-radius:6px;border:1.5px solid var(--border2);background:transparent;font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;text-align:center}
+
+/* COLOR PALETTE */
+.palette{display:flex;gap:7px;flex-wrap:wrap;margin-top:2px}
+.pcolor{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s;flex-shrink:0}
+.pcolor:hover{transform:scale(1.1)}
+.pcolor.sel{border-color:var(--text);transform:scale(1.1)}
+
+.mbtns{display:flex;gap:7px;margin-top:16px}
+.mbtn{flex:1;padding:9px;border:none;border-radius:6px;font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.mbtn-cancel{background:#F3F4F6;color:var(--muted)}
+.mbtn-cancel:hover{background:#E5E7EB}
+.mbtn-del{background:#FEE2E2;color:#DC2626}
+.mbtn-del:hover{background:#FECACA}
+.mbtn-save{color:#fff}
+
+/* COLOR SETUP MODAL */
+.setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .18s}
+.setup-overlay.show{opacity:1;pointer-events:all}
+.setup-modal{background:var(--surface);border-radius:16px;padding:26px;width:100%;max-width:340px;transform:translateY(6px);transition:transform .18s}
+.setup-overlay.show .setup-modal{transform:translateY(0)}
+.setup-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.setup-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.setup-person{margin-bottom:18px}
+.setup-name{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.setup-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.setup-btn{width:100%;padding:11px;border:none;border-radius:8px;font-family:'Pretendard',sans-serif;font-size:14px;font-weight:600;cursor:pointer;color:#fff;margin-top:4px;transition:opacity .15s}
+.setup-btn:hover{opacity:.88}
+
+/* LOADING */
+.loading{text-align:center;padding:48px;color:var(--muted);font-size:13px}
+.sp{width:20px;height:20px;border:2px solid var(--border2);border-top-color:#6366F1;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+.err-bar{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;padding:9px 16px;border-radius:6px;font-size:12px;display:none;margin:0 20px 0;max-width:1120px}
+
+/* STATUS */
+.status-row{max-width:1120px;margin:0 auto;padding:8px 20px 0;display:flex;gap:8px;flex-wrap:wrap}
+.s-chip{font-size:12px;padding:3px 10px;border-radius:20px;font-weight:500}
+
+@media(max-width:600px){
+  .header{height:auto;padding:10px 12px}
+  .header-inner{gap:8px}
+  .toolbar,.status-row{padding:8px 12px 0}
+  .grid-wrap{padding:0 12px 32px}
+  .week-label{min-width:90px;font-size:12px}
+  .legend{display:none}
+  .logo{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY (first visit / color setup) -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-modal">
+    <div class="setup-title">나의 색상 설정</div>
+    <div class="setup-sub">각자 원하는 색을 골라주세요 🎨</div>
+    <div class="setup-person">
+      <div class="setup-name"><span class="setup-dot" id="setupDotYujin"></span>유진</div>
+      <div class="palette" id="paletteYujin"></div>
+    </div>
+    <div class="setup-person">
+      <div class="setup-name"><span class="setup-dot" id="setupDotYuhan"></span>유한</div>
+      <div class="palette" id="paletteYuhan"></div>
+    </div>
+    <button class="setup-btn" id="setupSaveBtn" onclick="saveSetup()">완료</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo"><span class="logo-dot" id="logoDot"></span>가족 스케줄</div>
+    <div class="header-center week-nav" style="display:flex;align-items:center;gap:6px">
+      <button onclick="shiftWeek(-1)">&#8249;</button>
+      <span class="week-label" id="weekLabel">--</span>
+      <button onclick="shiftWeek(1)">&#8250;</button>
+      <button class="btn-today" onclick="goToday()">오늘</button>
+    </div>
+    <div class="user-tabs">
+      <button class="user-tab" id="tab-yujin" onclick="setUser('yujin')">
+        <span class="tab-dot" id="tdot-yujin"></span>유진
+      </button>
+      <button class="user-tab" id="tab-yuhan" onclick="setUser('yuhan')">
+        <span class="tab-dot" id="tdot-yuhan"></span>유한
+      </button>
+      <button class="user-tab" id="tab-mom" onclick="setUser('mom')">
+        👀 엄마
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS -->
+<div class="status-row" id="statusRow"></div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <span class="filter-label">보기</span>
+  <button class="fbtn on" id="fAll" onclick="setFilter('all')">전체</button>
+  <button class="fbtn" id="fFixed" onclick="setFilter('fixed')">🔒 고정</button>
+  <button class="fbtn" id="fFlex" onclick="setFilter('flexible')">📌 변동</button>
+  <button class="fbtn" id="fYujin" onclick="setFilter('yujin')">유진만</button>
+  <button class="fbtn" id="fYuhan" onclick="setFilter('yuhan')">유한만</button>
+  <div class="spacer"></div>
+  <button class="fbtn" onclick="openSetup()" style="border-color:var(--border2)">🎨 색상 변경</button>
+  <div class="legend" id="legend"></div>
+</div>
+
+<!-- ERROR -->
+<div class="err-bar" id="errBar"></div>
+
+<!-- GRID -->
+<div class="grid-wrap">
+  <div class="grid" id="scheduleGrid">
+    <div class="loading"><div class="sp"></div>불러오는 중...</div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="overlay" id="overlay" onclick="maybeClose(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">일정 추가</div>
+    <div class="fg">
+      <label class="fl">일정 이름</label>
+      <input class="fi" id="fTitle" type="text" placeholder="예: 대학원 수업">
+    </div>
+    <div class="fg f2">
+      <div><label class="fl">시작</label><input class="fi" id="fStart" type="time" value="09:00"></div>
+      <div><label class="fl">종료</label><input class="fi" id="fEnd" type="time" value="10:00"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">유형</label>
+      <div class="type-row">
+        <button class="tbtn" id="tFixed" onclick="selType('fixed')">🔒 고정</button>
+        <button class="tbtn" id="tFlex" onclick="selType('flexible')">📌 변동</button>
+      </div>
+    </div>
+    <div class="fg" id="repeatFg">
+      <label class="fl">반복</label>
+      <select class="fi" id="fRepeat">
+        <option value="none">반복 없음</option>
+        <option value="weekly">매주 반복</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">메모</label>
+      <input class="fi" id="fNote" type="text" placeholder="선택사항">
+    </div>
+    <div class="mbtns">
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">취소</button>
+      <button class="mbtn mbtn-del" id="btnDel" style="display:none" onclick="deleteEv()">삭제</button>
+      <button class="mbtn mbtn-save" id="btnSave" onclick="saveEv()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,getDocs,addDoc,updateDoc,deleteDoc,doc}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ══════════════════════════════════════════
+//  🔧 여기에 Firebase config 붙여넣기
+// ══════════════════════════════════════════
+const firebaseConfig={
+  apiKey:"AIzaSyB8vsX_zOh0tJg-dN8RJtlfHsd0OvcXzzk",
+  authDomain:"daily-schedule-85497.firebaseapp.com",
+  projectId:"daily-schedule-85497",
+  storageBucket:"daily-schedule-85497.firebasestorage.app",
+  messagingSenderId:"928912591868",
+  appId:"1:928912591868:web:b6894053486c103fe7c079"
+};
+// ══════════════════════════════════════════
+
+let db=null;
+try{
+  const app=initializeApp(firebaseConfig);
+  db=getFirestore(app);
+}catch(e){}
+
+// ── PALETTE ──
+const PALETTE=[
+  {id:'blue',  hex:'#3B82F6',label:'블루'},
+  {id:'indigo',hex:'#6366F1',label:'인디고'},
+  {id:'purple',hex:'#8B5CF6',label:'퍼플'},
+  {id:'pink',  hex:'#EC4899',label:'핑크'},
+  {id:'rose',  hex:'#F43F5E',label:'로즈'},
+  {id:'orange',hex:'#F97316',label:'오렌지'},
+  {id:'amber', hex:'#F59E0B',label:'앰버'},
+  {id:'teal',  hex:'#14B2A6',label:'틸'},
+  {id:'green', hex:'#10B981',label:'그린'},
+  {id:'slate', hex:'#64748B',label:'슬레이트'},
+];
+
+// ── STATE ──
+let events=[];
+let currentUser='yujin';
+let weekStart=getMonday(new Date());
+let filter='all';
+let editingId=null;
+let pendingSlot=null;
+let selType_='fixed';
+
+// user colors (loaded from localStorage)
+let userColors={yujin:'#3B82F6',yuhan:'#10B981'};
+let setupColors={yujin:'#3B82F6',yuhan:'#10B981'};
+
+function loadColors(){
+  try{
+    const s=localStorage.getItem('fam_colors');
+    if(s)userColors=JSON.parse(s);
+    else{localStorage.setItem('fam_colors',JSON.stringify(userColors));}
+  }catch(e){}
+  setupColors={...userColors};
+}
+function saveColors(){
+  userColors={...setupColors};
+  try{localStorage.setItem('fam_colors',JSON.stringify(userColors));}catch(e){}
+  applyCSSColors();
+}
+function applyCSSColors(){
+  document.documentElement.style.setProperty('--u-yujin',userColors.yujin);
+  document.documentElement.style.setProperty('--u-yuhan',userColors.yuhan);
+  // logo dot
+  document.getElementById('logoDot').style.background=`linear-gradient(135deg,${userColors.yujin},${userColors.yuhan})`;
+  // tab dots
+  document.getElementById('tdot-yujin').style.background=userColors.yujin;
+  document.getElementById('tdot-yuhan').style.background=userColors.yuhan;
+  // filter btns
+  document.getElementById('fYujin').style.setProperty('--uc',userColors.yujin);
+  document.getElementById('fYuhan').style.setProperty('--uc',userColors.yuhan);
+  // legend
+  renderLegend();
+  // status chips
+  renderStatus();
+}
+
+// ── HELPERS ──
+function getMonday(d){const day=d.getDay(),diff=d.getDate()-day+(day===0?-6:1);const m=new Date(d);m.setDate(diff);m.setHours(0,0,0,0);return m;}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function fmt(d){return`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}
+function p(n){return String(n).padStart(2,'0');}
+function fmtKr(d){return`${d.getMonth()+1}월 ${d.getDate()}일`;}
+function incT(t,m){const[h,mm]=t.split(':').map(Number);const tot=h*60+mm+m;return`${p(Math.floor(tot/60)%24)}:${p(tot%60)}`;}
+function hex2rgb(h){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`${r},${g},${b}`;}
+function isDark(h){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return(r*299+g*587+b*114)/1000<128;}
+
+// ── FIREBASE LOAD ──
+async function loadEvents(){
+  try{
+    if(!db)throw new Error('no db');
+    const snap=await getDocs(collection(db,'schedules'));
+    events=snap.docs.map(d=>({id:d.id,...d.data()}));
+    showErr(null);
+  }catch(e){
+    showErr('Firebase 미연결 — 데모 데이터로 실행 중');
+    events=demoData();
+  }
+  renderGrid();renderStatus();
+}
+
+function demoData(){
+  const m=getMonday(new Date());
+  return[
+    {id:'d1',user:'yujin',title:'대학원 수업',startTime:'10:00',endTime:'12:00',type:'fixed',repeat:'weekly',day:0,note:'연세대'},
+    {id:'d2',user:'yujin',title:'연구팀 미팅',startTime:'14:00',endTime:'15:30',type:'fixed',repeat:'weekly',day:2,note:'BK21'},
+    {id:'d3',user:'yujin',title:'LearningSpark',startTime:'13:00',endTime:'17:00',type:'fixed',repeat:'weekly',day:1,note:'파트타임'},
+    {id:'d4',user:'yujin',title:'세미나',startTime:'15:00',endTime:'17:00',type:'flexible',repeat:'none',date:fmt(addDays(m,3)),day:3,note:''},
+    {id:'d5',user:'yuhan',title:'학교 수업',startTime:'09:00',endTime:'11:00',type:'fixed',repeat:'weekly',day:1,note:''},
+    {id:'d6',user:'yuhan',title:'학교 수업',startTime:'09:00',endTime:'11:00',type:'fixed',repeat:'weekly',day:3,note:''},
+    {id:'d7',user:'yuhan',title:'아르바이트',startTime:'18:00',endTime:'21:00',type:'fixed',repeat:'weekly',day:2,note:''},
+    {id:'d8',user:'yuhan',title:'친구 약속',startTime:'14:00',endTime:'17:00',type:'flexible',repeat:'none',date:fmt(addDays(m,5)),day:5,note:''},
+  ];
+}
+
+// ── RENDER GRID ──
+const DAYS=['월','화','수','목','금','토','일'];
+const TIMES=[];
+for(let h=9;h<=21;h++){TIMES.push(`${p(h)}:00`);TIMES.push(`${p(h)}:30`);}
+
+function renderGrid(){
+  const grid=document.getElementById('scheduleGrid');
+  const todayStr=fmt(new Date());
+  let html='<div class="g-head"><div class="gh">TIME</div>';
+  for(let i=0;i<7;i++){
+    const d=addDays(weekStart,i);
+    const isT=fmt(d)===todayStr;
+    const cls=i===5?'sat':i===6?'sun':'';
+    html+=`<div class="gh ${cls}${isT?' today-h':''}"><span class="dn">${d.getDate()}</span>${DAYS[i]}</div>`;
+  }
+  html+='</div>';
+
+  TIMES.forEach(time=>{
+    const isH=time.endsWith(':30');
+    html+=`<div class="g-row${isH?' half':''}"><div class="tc">${time}</div>`;
+    for(let i=0;i<7;i++){
+      const d=addDays(weekStart,i);
+      const ds=fmt(d);
+      const isT=ds===todayStr;
+      html+=`<div class="dc${isT?' today-c':''}" onclick="openAdd('${ds}','${time}',${i})">`;
+      getSlot(ds,time,i).forEach(ev=>{
+        if(!shouldShow(ev))return;
+        const col=userColors[ev.user];
+        const isFixed=ev.type==='fixed';
+        const whoLabel=ev.user==='yujin'?'유진':'유한';
+        const textCol=isDark(col)?'rgba(255,255,255,.95)':'rgba(0,0,0,.8)';
+        const whoBg=isDark(col)?'rgba(255,255,255,.2)':'rgba(0,0,0,.12)';
+        const bgAlpha=isFixed?'0.18':'0.10';
+        const stripePart=isFixed?`background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0,rgba(255,255,255,.12) 2px,transparent 2px,transparent 6px);`:'';
+        html+=`<div class="ev" style="background:rgba(${hex2rgb(col)},${bgAlpha});border-left:2.5px solid ${col};color:${col};${stripePart}" onclick="openDetail(event,'${ev.id}')">
+          <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'}">${whoLabel}</span>
+          ${ev.title}
+        </div>`;
+      });
+      if(currentUser!=='mom')html+='<div class="add-hint">+ 추가</div>';
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+  grid.innerHTML=html;
+  updateWeekLabel();
+}
+
+function getSlot(ds,time,di){
+  return events.filter(ev=>ev.startTime===time&&(ev.repeat==='weekly'?ev.day===di:ev.date===ds));
+}
+function shouldShow(ev){
+  if(filter==='all')return true;
+  if(filter==='fixed')return ev.type==='fixed';
+  if(filter==='flexible')return ev.type==='flexible';
+  if(filter==='yujin')return ev.user==='yujin';
+  if(filter==='yuhan')return ev.user==='yuhan';
+  return true;
+}
+
+// ── STATUS / LEGEND ──
+function renderStatus(){
+  const row=document.getElementById('statusRow');
+  const yc=events.filter(e=>e.user==='yujin').length;
+  const hc=events.filter(e=>e.user==='yuhan').length;
+  row.innerHTML=`
+    <span class="s-chip" style="background:rgba(${hex2rgb(userColors.yujin)},.12);color:${userColors.yujin}">유진 ${yc}개</span>
+    <span class="s-chip" style="background:rgba(${hex2rgb(userColors.yuhan)},.12);color:${userColors.yuhan}">유한 ${hc}개</span>`;
+}
+function renderLegend(){
+  const el=document.getElementById('legend');
+  const yu=userColors.yujin,yh=userColors.yuhan;
+  el.innerHTML=`
+    <div class="leg"><div class="leg-bar" style="background:${yu};opacity:.5"></div>고정(유진)</div>
+    <div class="leg"><div class="leg-bar" style="background:${yu};opacity:.25"></div>변동(유진)</div>
+    <div class="leg"><div class="leg-bar" style="background:${yh};opacity:.5"></div>고정(유한)</div>
+    <div class="leg"><div class="leg-bar" style="background:${yh};opacity:.25"></div>변동(유한)</div>`;
+}
+
+// ── USER / NAV ──
+window.setUser=function(u){
+  currentUser=u;
+  const cols={yujin:userColors.yujin,yuhan:userColors.yuhan,mom:'#7C3AED'};
+  ['yujin','yuhan','mom'].forEach(x=>{
+    const t=document.getElementById('tab-'+x);
+    if(x===u){t.classList.add('active');t.style.background=cols[u];}
+    else{t.classList.remove('active');t.style.background='';}
+  });
+  const s=document.getElementById('btnSave');
+  s.style.background=u==='mom'?'#7C3AED':userColors[u];
+  renderGrid();
+};
+window.shiftWeek=function(n){weekStart=addDays(weekStart,n*7);renderGrid();};
+window.goToday=function(){weekStart=getMonday(new Date());renderGrid();};
+function updateWeekLabel(){
+  document.getElementById('weekLabel').textContent=`${fmtKr(weekStart)} ~ ${fmtKr(addDays(weekStart,6))}`;
+}
+
+// ── FILTERS ──
+window.setFilter=function(f){
+  filter=f;
+  const map={all:'fAll',fixed:'fFixed',flexible:'fFlex',yujin:'fYujin',yuhan:'fYuhan'};
+  Object.entries(map).forEach(([k,id])=>{
+    const btn=document.getElementById(id);
+    btn.classList.toggle('on',k===f);
+    if(k===f){
+      if(k==='yujin')btn.style.background=userColors.yujin,btn.style.borderColor=userColors.yujin,btn.style.color='#fff';
+      else if(k==='yuhan')btn.style.background=userColors.yuhan,btn.style.borderColor=userColors.yuhan,btn.style.color='#fff';
+      else btn.style.background='';
+    }else{btn.style.background='';btn.style.borderColor='';btn.style.color='';}
+  });
+  renderGrid();
+};
+
+// ── ADD MODAL ──
+window.openAdd=function(ds,time,di){
+  if(currentUser==='mom')return;
+  editingId=null;pendingSlot={ds,time,di};
+  document.getElementById('modalTitle').textContent='일정 추가';
+  document.getElementById('fTitle').value='';
+  document.getElementById('fStart').value=time;
+  document.getElementById('fEnd').value=incT(time,60);
+  document.getElementById('fNote').value='';
+  document.getElementById('fRepeat').value='none';
+  document.getElementById('btnDel').style.display='none';
+  document.getElementById('btnSave').style.display='';
+  document.getElementById('btnSave').style.background=userColors[currentUser];
+  selType('fixed');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('fTitle').focus(),120);
+};
+window.openDetail=function(e,id){
+  e.stopPropagation();
+  const ev=events.find(x=>x.id===id);if(!ev)return;
+  const canEdit=currentUser===ev.user;
+  editingId=canEdit?id:null;
+  document.getElementById('modalTitle').textContent=canEdit?'일정 수정':'일정 보기';
+  document.getElementById('fTitle').value=ev.title;
+  document.getElementById('fStart').value=ev.startTime;
+  document.getElementById('fEnd').value=ev.endTime||'';
+  document.getElementById('fNote').value=ev.note||'';
+  document.getElementById('fRepeat').value=ev.repeat||'none';
+  document.getElementById('btnDel').style.display=canEdit?'':'none';
+  document.getElementById('btnSave').style.display=canEdit?'':'none';
+  if(canEdit)document.getElementById('btnSave').style.background=userColors[currentUser];
+  pendingSlot={ds:ev.date,di:ev.day};
+  selType(ev.type||'fixed');
+  document.getElementById('overlay').classList.add('show');
+};
+window.closeModal=function(){document.getElementById('overlay').classList.remove('show');};
+window.maybeClose=function(e){if(e.target.id==='overlay')closeModal();};
+window.selType=function(t){
+  selType_=t;
+  const fc=document.getElementById('tFixed'),fl=document.getElementById('tFlex');
+  const col=userColors[currentUser]||'#3B82F6';
+  fc.style.background=t==='fixed'?`rgba(${hex2rgb(col)},.15)`:'';
+  fc.style.borderColor=t==='fixed'?col:'';
+  fc.style.color=t==='fixed'?col:'';
+  fl.style.background=t==='flexible'?`rgba(${hex2rgb(col)},.15)`:'';
+  fl.style.borderColor=t==='flexible'?col:';';
+  fl.style.color=t==='flexible'?col:'';
+};
+
+// ── SAVE / DELETE ──
+window.saveEv=async function(){
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title){document.getElementById('fTitle').focus();return;}
+  const data={
+    user:currentUser,title,
+    startTime:document.getElementById('fStart').value,
+    endTime:document.getElementById('fEnd').value,
+    type:selType_,
+    repeat:document.getElementById('fRepeat').value,
+    note:document.getElementById('fNote').value,
+    day:pendingSlot?.di??null,
+    date:pendingSlot?.ds??null,
+  };
+  const btn=document.getElementById('btnSave');
+  btn.textContent='저장 중…';
+  try{
+    if(editingId){
+      if(db)await updateDoc(doc(db,'schedules',editingId),data);
+      const i=events.findIndex(x=>x.id===editingId);
+      if(i>-1)events[i]={...events[i],...data};
+    }else{
+      let newId='local-'+Date.now();
+      if(db){const ref=await addDoc(collection(db,'schedules'),data);newId=ref.id;}
+      events.push({id:newId,...data});
+    }
+  }catch(e){
+    if(editingId){const i=events.findIndex(x=>x.id===editingId);if(i>-1)events[i]={...events[i],...data};}
+    else events.push({id:'local-'+Date.now(),...data});
+  }
+  btn.textContent='저장';
+  closeModal();renderGrid();renderStatus();
+};
+window.deleteEv=async function(){
+  if(!editingId||!confirm('이 일정을 삭제할까요?'))return;
+  try{if(db)await deleteDoc(doc(db,'schedules',editingId));}catch(e){}
+  events=events.filter(x=>x.id!==editingId);
+  closeModal();renderGrid();renderStatus();
+};
+
+// ── COLOR SETUP ──
+function buildPalette(containerId,forUser){
+  const el=document.getElementById(containerId);
+  el.innerHTML=PALETTE.map(c=>`
+    <div class="pcolor${setupColors[forUser]===c.hex?' sel':''}"
+      style="background:${c.hex}"
+      title="${c.label}"
+      onclick="pickColor('${forUser}','${c.hex}','${containerId}')">
+    </div>`).join('');
+  document.getElementById(`setupDot${forUser.charAt(0).toUpperCase()+forUser.slice(1)}`).style.background=setupColors[forUser];
+}
+window.openSetup=function(){
+  setupColors={...userColors};
+  buildPalette('paletteYujin','yujin');
+  buildPalette('paletteYuhan','yuhan');
+  document.getElementById('setupSaveBtn').style.background=userColors.yujin;
+  document.getElementById('setupOverlay').classList.add('show');
+};
+window.pickColor=function(user,hex,cid){
+  setupColors[user]=hex;
+  buildPalette(cid,user);
+};
+window.saveSetup=function(){
+  saveColors();
+  document.getElementById('setupOverlay').classList.remove('show');
+  setUser(currentUser);
+  setFilter(filter);
+  renderGrid();renderStatus();
+};
+
+// ── ERROR ──
+function showErr(msg){
+  const el=document.getElementById('errBar');
+  if(msg){el.textContent='⚠️ '+msg;el.style.display='block';}
+  else el.style.display='none';
+}
+
+// ── INIT ──
+loadColors();
+applyCSSColors();
+setUser('yujin');
+setFilter('all');
+loadEvents();
+
+// open setup on very first visit
+if(!localStorage.getItem('fam_colors')){
+  setTimeout(()=>openSetup(),400);
+}
+</script>
+</body>
+</html>
