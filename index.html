@@ -397,19 +397,23 @@ function renderGrid(){
       const isT=ds===todayStr;
       html+=`<div class="dc${isT?' today-c':''}" onclick="openAdd('${ds}','${time}',${i})">`;
       // Render events that START at this time slot
-      getSlot(ds,time,i).filter(ev=>shouldShow(ev)).forEach(ev=>{
+      const slotEvs=getSlot(ds,time,i).filter(ev=>shouldShow(ev));
+      const total=slotEvs.length;
+      slotEvs.forEach((ev,idx)=>{
         const col=userColors[ev.user];
         const isFixed=ev.type==='fixed';
         const whoLabel=ev.user==='yujin'?'유진':'유한';
         const bgAlpha=isFixed?'0.15':'0.09';
         const stripePart=isFixed?'background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.13) 0,rgba(255,255,255,.13) 2px,transparent 2px,transparent 6px);':'';
         const durMins=timeDiff(ev.startTime,ev.endTime);
-        // height = (durMins/30) slots * ROW_H px - small gap
         const evH=Math.max(ROW_H-4, Math.round((durMins/30)*ROW_H)-4);
         const showTime=durMins>=60;
-        html+=`<div class="ev" style="height:${evH}px;background:rgba(${hex2rgb(col)},${bgAlpha});border-left:3px solid ${col};color:${col};${stripePart}" onclick="openDetail(event,'${ev.id}')">
+        // Side-by-side layout when multiple events in same slot
+        const W=total>1?`width:calc(${100/total}% - 3px);`:'left:2px;right:2px;';
+        const L=total>1?`left:calc(${idx}*${100/total}% + 2px);`:'';
+        html+=`<div class="ev" style="height:${evH}px;background:rgba(${hex2rgb(col)},${bgAlpha});border-left:3px solid ${col};color:${col};${W}${L}${stripePart}" onclick="openDetail(event,'${ev.id}')">
           <span class="ev-who" style="background:${col};color:${isDark(col)?'rgba(255,255,255,.9)':'rgba(0,0,0,.75)'};flex-shrink:0">${whoLabel}</span>
-          <span style="overflow:hidden;min-width:0">${ev.title}${showTime?`<br><span style="font-size:9px;opacity:.65">${ev.startTime}–${ev.endTime}</span>`:''}</span>
+          <span style="overflow:hidden;min-width:0;font-size:10px">${ev.title}${showTime?`<br><span style="font-size:9px;opacity:.65">${ev.startTime}–${ev.endTime}</span>`:''}</span>
         </div>`;
       });
       if(currentUser!=='mom')html+='<div class="add-hint" style="position:absolute;bottom:2px;left:3px">+ 추가</div>';
